@@ -1,28 +1,54 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const connectBtn = document.getElementById("connectEsp32Btn");
-  const disconnectBtn = document.getElementById("disconnectEsp32Btn");
   const statusBadge = document.getElementById("esp32StatusBadge");
   const liveKneeChartCanvas = document.getElementById("liveKneeChart");
   const modeButtons = document.querySelectorAll(".mode-btn");
+  const toggleSimBtn = document.getElementById("toggleSimBtn");
+
+  const serverIpDisplay = document.getElementById("serverIpDisplay");
+  const udpPortDisplay = document.getElementById("udpPortDisplay");
+  const liveKneeAngle = document.getElementById("liveKneeAngle");
+  const liveStepCount = document.getElementById("liveStepCount");
+  const liveCadenceVal = document.getElementById("liveCadenceVal");
+  const liveSourceVal = document.getElementById("liveSourceVal");
+  const packetCountVal = document.getElementById("packetCountVal");
+  const kneeStatusLabel = document.getElementById("kneeStatusLabel");
 
   let liveChart = null;
   let pollTimer = null;
+  let isSimulating = false;
 
-  function updateStatusIndicator(status) {
-    if (!statusBadge) return;
-    const labelMap = {
-      connected: { text: "🟢 Connected", className: "status-badge low" },
-      waiting: {
-        text: "🟡 Waiting for ESP32",
-        className: "status-badge neutral",
-      },
-      disconnected: { text: "🔴 Disconnected", className: "status-badge high" },
-    };
-    const choice = labelMap[status] || labelMap.waiting;
-    statusBadge.className = choice.className;
-    statusBadge.textContent = choice.text;
+  // 1. Fetch Local Server IP & Wi-Fi Ingestion Details
+  function loadWifiInfo() {
+    fetch("/api/wifi-info")
+      .then((res) => res.json())
+      .then((data) => {
+        if (serverIpDisplay) {
+          serverIpDisplay.textContent = data.local_ip || "127.0.0.1";
+        }
+        if (udpPortDisplay) {
+          udpPortDisplay.textContent = data.udp_port || 5005;
+        }
+      })
+      .catch((err) => console.debug("Could not fetch Wi-Fi info:", err));
   }
 
+  // 2. Update Status Indicator Badges
+  function updateStatusIndicator(status, source, clientIp) {
+    if (!statusBadge) return;
+    if (status === "connected") {
+      let sourceLabel = "Wi-Fi (UDP)";
+      if (source === "wifi_http") sourceLabel = "Wi-Fi (HTTP)";
+      else if (source === "simulation") sourceLabel = "Simulation";
+
+      statusBadge.className = "badge bg-success text-white px-3 py-2 fs-6";
+      statusBadge.innerHTML = `<i class="bi bi-wifi me-1"></i>Connected: ${sourceLabel}${clientIp ? ` (${clientIp})` : ""}`;
+    } else {
+      statusBadge.className = "badge bg-warning text-dark px-3 py-2 fs-6";
+      statusBadge.innerHTML = `<i class="bi bi-arrow-repeat spin me-1"></i>Waiting for ESP32 Wi-Fi...`;
+    }
+  }
+
+  // 3. Switch between LIVE (Wi-Fi) and DEMO (Manual)
   function setMode(mode) {
     const normalized = (mode || "LIVE").toUpperCase();
     modeButtons.forEach((button) => {
@@ -37,13 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (liveHelp) liveHelp.classList.toggle("d-none", normalized !== "LIVE");
     if (demoHelp) demoHelp.classList.toggle("d-none", normalized !== "DEMO");
 
-    if (connectBtn) {
-      connectBtn.classList.toggle("d-none", normalized !== "LIVE");
-    }
-    if (disconnectBtn) {
-      disconnectBtn.classList.toggle("d-none", normalized !== "LIVE");
-    }
-
     const sampleBtn = document.getElementById("useSampleValuesBtn");
     if (sampleBtn) {
       sampleBtn.classList.toggle("d-none", normalized !== "DEMO");
@@ -57,20 +76,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // 4. Initialize Smooth Real-Time Knee Flexion/Extension Chart
   function initKneeChart() {
     if (!liveKneeChartCanvas) return;
     const ctx = liveKneeChartCanvas.getContext("2d");
     liveChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: Array.from({ length: 20 }, (_, i) => i),
+        labels: Array.from({ length: 30 }, (_, i) => i + 1),
         datasets: [
           {
-            label: "Knee angle",
-            data: Array.from({ length: 20 }, () => 55),
+            label: "Knee Angle (°)",
+            data: Array.from({ length: 30 }, () => 50),
             borderColor: "#0d6efd",
+            backgroundColor: "rgba(13, 110, 253, 0.08)",
+            borderWidth: 2.5,
             tension: 0.35,
-            fill: false,
+            fill: true,
+            pointRadius: 0,
           },
         ],
       },
@@ -78,83 +101,126 @@ document.addEventListener("DOMContentLoaded", function () {
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
-        scales: { y: { min: 0, max: 100 } },
+        scales: {
+          y: {
+            min: 15,
+            max: 95,
+            title: { display: true, text: "Degrees (°)" },
+            grid: { color: "rgba(0,0,0,0.05)" },
+          },
+          x: {
+            display: false,
+          },
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: { boxWidth: 12 },
+          },
+        },
       },
     });
   }
 
-  function updateKneeChart(value) {
+  // 5. Update Waveform with Incoming Dynamic Angles
+  function updateKneeWaveform(historyArray, currentVal) {
     if (!liveChart) return;
     const dataset = liveChart.data.datasets[0];
-    dataset.data.push(Number(value) || 55);
-    if (dataset.data.length > 20) dataset.data.shift();
+    if (Array.isArray(historyArray) && historyArray.length > 0) {
+      dataset.data = historyArray;
+    } else if (currentVal !== undefined) {
+      dataset.data.push(Number(currentVal) || 50);
+      if (dataset.data.length > 30) dataset.data.shift();
+    }
     liveChart.data.labels = Array.from(
       { length: dataset.data.length },
-      (_, i) => i,
+      (_, i) => i + 1
     );
-    liveChart.update();
+    liveChart.update("none");
   }
 
-  function updateFeatureInputs(data) {
-    const features = data && data.features ? data.features : {};
+  // 6. Update Feature Inputs & Sliders
+  function updateFeatureInputs(features) {
+    if (!features || typeof features !== "object") return;
     const map = {
-      gait_speed: "gait_speed",
-      stride_time: "stride_time",
-      stride_length: "stride_length",
-      cadence: "cadence",
-      knee_rom: "knee_rom",
-      step_time_std: "step_time_std",
+      gait_speed: { unit: "m/s", decimals: 2 },
+      stride_time: { unit: "s", decimals: 2 },
+      stride_length: { unit: "m", decimals: 2 },
+      cadence: { unit: "steps/min", decimals: 0 },
+      knee_rom: { unit: "°", decimals: 0 },
+      step_time_std: { unit: "s", decimals: 3 },
     };
 
-    Object.entries(map).forEach(([key, id]) => {
-      const input = document.getElementById(id);
-      if (!input || features[key] === undefined) return;
-      input.value = features[key];
-      const output = document.getElementById(`${id}_value`);
-      if (output) {
-        if (
-          id === "gait_speed" ||
-          id === "stride_time" ||
-          id === "stride_length"
-        ) {
-          const units = {
-            gait_speed: "m/s",
-            stride_time: "s",
-            stride_length: "m",
-          };
-          output.textContent = `${Number(features[key]).toFixed(2)} ${units[id]}`;
-        } else if (id === "cadence") {
-          output.textContent = `${Number(features[key]).toFixed(0)} steps/min`;
-        } else if (id === "knee_rom") {
-          output.textContent = `${Number(features[key]).toFixed(0)} °`;
-          updateKneeChart(features[key]);
-        } else {
-          output.textContent = `${Number(features[key]).toFixed(2)} s`;
-        }
+    Object.entries(map).forEach(([key, meta]) => {
+      const input = document.getElementById(key);
+      const output = document.getElementById(`${key}_value`);
+      if (input && features[key] !== undefined) {
+        input.value = features[key];
+      }
+      if (output && features[key] !== undefined) {
+        output.textContent = `${Number(features[key]).toFixed(meta.decimals)} ${meta.unit}`;
       }
     });
   }
 
+  // 7. Poll Real-Time Telemetry from Flask Ingestion Engine
   function pollLiveData() {
     fetch("/api/live-data")
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
-        if (data.status === "connected" && data.features) {
-          updateStatusIndicator("connected");
-          updateFeatureInputs(data);
-        } else if (data.status === "waiting") {
-          updateStatusIndicator("waiting");
-        } else {
-          updateStatusIndicator("disconnected");
+        const isConnected = data.status === "connected";
+        updateStatusIndicator(data.status, data.source, data.client_ip);
+
+        // Update live metrics cards
+        if (liveKneeAngle && data.knee_angle !== undefined) {
+          liveKneeAngle.textContent = `${Number(data.knee_angle).toFixed(1)} °`;
+        }
+        if (kneeStatusLabel && data.knee_angle !== undefined) {
+          const deg = Number(data.knee_angle);
+          if (deg < 35) kneeStatusLabel.textContent = "Extension / Stance";
+          else if (deg > 60) kneeStatusLabel.textContent = "Peak Flexion / Swing";
+          else kneeStatusLabel.textContent = "Mid-Swing Cycle";
+        }
+
+        if (liveStepCount && data.step_count !== undefined) {
+          liveStepCount.textContent = data.step_count;
+        }
+
+        if (liveCadenceVal && data.features && data.features.cadence) {
+          liveCadenceVal.textContent = Number(data.features.cadence).toFixed(0);
+        }
+
+        if (liveSourceVal) {
+          if (data.source === "wifi_udp") liveSourceVal.textContent = "Wi-Fi (UDP)";
+          else if (data.source === "wifi_http") liveSourceVal.textContent = "Wi-Fi (HTTP)";
+          else if (data.source === "simulation") liveSourceVal.textContent = "Test Stream";
+          else liveSourceVal.textContent = isConnected ? "Active" : "Awaiting";
+        }
+
+        if (packetCountVal && data.packets_received !== undefined) {
+          packetCountVal.textContent = `${data.packets_received} samples`;
+        }
+
+        // Update continuous knee angle waveform
+        if (data.knee_angle_history) {
+          updateKneeWaveform(data.knee_angle_history, data.knee_angle);
+        }
+
+        // Update the 6 gait sliders automatically if connected
+        if (isConnected && data.features) {
+          updateFeatureInputs(data.features);
         }
       })
-      .catch(() => updateStatusIndicator("disconnected"));
+      .catch((err) => {
+        console.debug("Telemetry polling issue:", err);
+      });
   }
 
   function startPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollLiveData();
-    pollTimer = setInterval(pollLiveData, 2000);
+    pollTimer = setInterval(pollLiveData, 280); // Fast 3.5 Hz refresh for smooth waveform
   }
 
   function stopPolling() {
@@ -162,54 +228,36 @@ document.addEventListener("DOMContentLoaded", function () {
     pollTimer = null;
   }
 
-  function connectESP32() {
-    fetch("/api/connect-esp32", { method: "POST" })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status === "connected") {
-          updateStatusIndicator("connected");
-          if (disconnectBtn) disconnectBtn.classList.remove("d-none");
-          if (connectBtn) connectBtn.classList.add("d-none");
-          startPolling();
-        } else {
-          updateStatusIndicator("disconnected");
-          if (disconnectBtn) disconnectBtn.classList.add("d-none");
-          if (connectBtn) connectBtn.classList.remove("d-none");
-          console.error(
-            "ESP32 connection failed:",
-            data.message || data.status,
-          );
-        }
-      })
-      .catch((error) => {
-        updateStatusIndicator("disconnected");
-        console.error("ESP32 connection error:", error);
-      });
+  // 8. Toggle Test Wi-Fi Simulation
+  if (toggleSimBtn) {
+    toggleSimBtn.addEventListener("click", function () {
+      fetch("/api/simulation/toggle", { method: "POST" })
+        .then((res) => res.json())
+        .then((res) => {
+          isSimulating = !!res.simulation;
+          if (isSimulating) {
+            toggleSimBtn.className = "btn btn-sm btn-danger";
+            toggleSimBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Stop Test Stream';
+          } else {
+            toggleSimBtn.className = "btn btn-sm btn-outline-success";
+            toggleSimBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i>Test Wi-Fi Stream';
+          }
+        });
+    });
   }
 
-  function disconnectESP32() {
-    fetch("/api/disconnect-esp32", { method: "POST" })
-      .then(() => {
-        updateStatusIndicator("disconnected");
-        stopPolling();
-        if (disconnectBtn) disconnectBtn.classList.add("d-none");
-        if (connectBtn) connectBtn.classList.remove("d-none");
-      })
-      .catch((error) => console.error("ESP32 disconnect error:", error));
-  }
-
+  // 9. Bind Mode Selector Buttons
   modeButtons.forEach((button) => {
     button.addEventListener("click", function () {
       setMode(button.dataset.mode || "LIVE");
     });
   });
 
+  // Initialize
+  loadWifiInfo();
   initKneeChart();
   updateStatusIndicator("waiting");
   const defaultMode =
     document.querySelector(".mode-btn.active")?.dataset.mode || "LIVE";
   setMode(defaultMode);
-
-  if (connectBtn) connectBtn.addEventListener("click", connectESP32);
-  if (disconnectBtn) disconnectBtn.addEventListener("click", disconnectESP32);
 });
