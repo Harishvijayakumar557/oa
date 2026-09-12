@@ -1,0 +1,29 @@
+OA Screening Model Evaluation Report
+========================================
+Disclaimer: This evaluation is based on synthetic gait data for research and prototype assessment only.
+It is not a medical diagnostic instrument.
+
+Dataset shape: (1500, 7)
+Class distribution: {0: 500, 1: 500, 2: 500}
+
+Detailed classification report:
+              precision    recall  f1-score   support
+
+         Low     0.9216    0.9400    0.9307       100
+    Moderate     0.7476    0.7700    0.7586       100
+        High     0.8421    0.8000    0.8205       100
+
+    accuracy                         0.8367       300
+   macro avg     0.8371    0.8367    0.8366       300
+weighted avg     0.8371    0.8367    0.8366       300
+
+
+Computed metrics:
+Overall accuracy: 0.8367
+Macro F1:        0.8366
+Weighted F1:     0.8366
+Cohen's kappa:   0.7550
+
+5-fold cross-validation:
+Accuracy mean ± std: 0.8453 ± 0.0120
+F1 mean ± std:       0.8458 ± 0.0114

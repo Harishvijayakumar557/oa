@@ -1,0 +1,70 @@
+{% extends 'base.html' %} {% block content %}
+<section class="page-header compact">
+  <div
+    class="d-flex justify-content-between align-items-center flex-wrap gap-3"
+  >
+    <div>
+      <span class="section-badge"
+        ><i class="fa-solid fa-clock-rotate-left me-2"></i>{{
+        translations.get('history', 'History') }}</span
+      >
+      <h1 class="page-title mt-3">Patient screening history</h1>
+    </div>
+    <a href="{{ url_for('main_bp.index') }}" class="btn btn-outline-primary"
+      >Back to Dashboard</a
+    >
+  </div>
+</section>
+
+<div class="card-panel">
+  {% if history %}
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Age</th>
+          <th>Date</th>
+          <th>Mode</th>
+          <th>Risk</th>
+          <th>Report</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in history %}
+        <tr>
+          <td>{{ item.patient.name if item.patient else 'N/A' }}</td>
+          <td>
+            {{ item.patient.age if item.patient and item.patient.age is not none
+            else 'N/A' }}
+          </td>
+          <td>
+            {{ item.timestamp.strftime('%Y-%m-%d %H:%M') if item.timestamp else
+            'N/A' }}
+          </td>
+          <td>{{ item.mode or 'LIVE' }}</td>
+          <td>
+            <span
+              class="status-badge {{ 'low' if item.risk_label == 'Low Risk' else 'moderate' if item.risk_label == 'Moderate Risk' else 'high' if item.risk_label else 'neutral' }}"
+            >
+              {{ item.risk_label or 'N/A' }}
+            </span>
+          </td>
+          <td><a href="/report/{{ item.id }}" class="mini-link">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-inbox"></i>
+    <h4>No patient history recorded yet</h4>
+    <p>
+      Complete the first screening workflow to populate the patient record and
+      risk history.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

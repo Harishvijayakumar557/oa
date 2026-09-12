@@ -1,0 +1,80 @@
+/* Medical dashboard styling */
+
+body {
+  background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+}
+
+[data-testid="stAppViewContainer"] {
+  background: #f7fbff;
+}
+
+[data-testid="stSidebar"] {
+  background: #0d3b66;
+  color: white;
+}
+
+.main .block-container {
+  padding-top: 2rem;
+}
+
+h1,
+h2,
+h3 {
+  color: #103b6e;
+}
+
+div[data-testid="stMetricValue"] {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.report-card {
+  border-left: 5px solid #2d8cff;
+  background: linear-gradient(90deg, #f8fbff 0%, #edf6ff 100%);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(19, 63, 106, 0.06);
+}
+
+.risk-low {
+  background: linear-gradient(135deg, #e8fff1 0%, #dff8e8 100%);
+  border-left: 6px solid #1abc6d;
+}
+
+.risk-moderate {
+  background: linear-gradient(135deg, #fff7e8 0%, #fff0cf 100%);
+  border-left: 6px solid #f5a623;
+}
+
+.risk-high {
+  background: linear-gradient(135deg, #fff0f0 0%, #ffe2e2 100%);
+  border-left: 6px solid #e74c3c;
+}
+
+.info-pill {
+  background: #eaf2ff;
+  border-radius: 999px;
+  color: #0b3d71;
+  padding: 0.2rem 0.75rem;
+  font-weight: 600;
+}
+
+.medical-divider {
+  border-top: 2px solid #dfeafc;
+  margin: 1rem 0;
+}
+
+.stButton > button {
+  background: linear-gradient(135deg, #1e5fa8 0%, #2d8cff 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.stDownloadButton > button {
+  background: linear-gradient(135deg, #0d3b66 0%, #224f8d 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+}

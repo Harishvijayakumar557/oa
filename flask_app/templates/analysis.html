@@ -1,0 +1,250 @@
+{% extends 'base.html' %} {% block content %}
+<div class="analysis-page container-fluid px-0">
+  <section class="page-header compact mb-4">
+    <div
+      class="d-flex justify-content-between align-items-center flex-wrap gap-3"
+    >
+      <div>
+        <span class="section-badge"
+          ><i class="bi bi-activity me-2"></i>COREX screening</span
+        >
+        <h1 class="page-title mt-3 mb-0">AI-Assisted OA Risk Screening</h1>
+      </div>
+      <a href="/report" class="btn btn-outline-primary"
+        ><i class="bi bi-file-earmark-medical me-2"></i>Reports</a
+      >
+    </div>
+  </section>
+
+  <div class="row g-4 align-items-start">
+    <div class="col-xl-5">
+      <div class="card-panel h-100">
+        <div class="panel-header">
+          <h3>Six gait & movement features</h3>
+          <div
+            class="mode-selector btn-group"
+            role="group"
+            aria-label="Screening mode"
+          >
+            <button
+              type="button"
+              class="btn btn-sm mode-btn {% if (screening_mode|default('LIVE')|upper) == 'LIVE' %}btn-primary active{% else %}btn-outline-primary{% endif %}"
+              data-mode="LIVE"
+            >
+              LIVE
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm mode-btn {% if (screening_mode|default('LIVE')|upper) == 'DEMO' %}btn-primary active{% else %}btn-outline-primary{% endif %}"
+              data-mode="DEMO"
+            >
+              DEMO
+            </button>
+          </div>
+        </div>
+
+        <div class="patient-mini-summary mb-4">
+          <div>
+            <span>Patient</span
+            ><strong>{{ patient.name or 'Sample Patient' }}</strong>
+          </div>
+          <div>
+            <span>ID</span
+            ><strong>{{ patient.patient_id or patient.id or 'OA-001' }}</strong>
+          </div>
+        </div>
+
+        <div class="info-banner mb-3">
+          <strong>Screening only:</strong> this tool supports risk screening and
+          does not diagnose osteoarthritis.
+        </div>
+
+        <div class="imu-layout mb-4">
+          <div class="imu-box">
+            <div class="imu-title">IMU 1 — Thigh</div>
+            <div class="imu-subtitle">Above knee</div>
+          </div>
+          <div class="imu-box">
+            <div class="imu-title">IMU 2 — Lower leg</div>
+            <div class="imu-subtitle">Below knee</div>
+          </div>
+        </div>
+
+        <div class="feature-input-list">
+          <div class="range-row">
+            <label for="gait_speed"
+              >Gait Speed
+              <span class="range-value" id="gait_speed_value"
+                >1.25 m/s</span
+              ></label
+            ><input
+              id="gait_speed"
+              type="range"
+              min="0.5"
+              max="2.0"
+              step="0.01"
+              value="1.25"
+            />
+          </div>
+          <div class="range-row">
+            <label for="stride_time"
+              >Stride Time
+              <span class="range-value" id="stride_time_value"
+                >1.10 s</span
+              ></label
+            ><input
+              id="stride_time"
+              type="range"
+              min="0.60"
+              max="1.80"
+              step="0.01"
+              value="1.10"
+            />
+          </div>
+          <div class="range-row">
+            <label for="stride_length"
+              >Stride Length
+              <span class="range-value" id="stride_length_value"
+                >1.30 m</span
+              ></label
+            ><input
+              id="stride_length"
+              type="range"
+              min="0.80"
+              max="2.00"
+              step="0.01"
+              value="1.30"
+            />
+          </div>
+          <div class="range-row">
+            <label for="cadence"
+              >Cadence
+              <span class="range-value" id="cadence_value"
+                >110 steps/min</span
+              ></label
+            ><input
+              id="cadence"
+              type="range"
+              min="70"
+              max="170"
+              step="1"
+              value="110"
+            />
+          </div>
+          <div class="range-row">
+            <label for="knee_rom"
+              >Knee ROM
+              <span class="range-value" id="knee_rom_value">55 °</span></label
+            ><input
+              id="knee_rom"
+              type="range"
+              min="20"
+              max="100"
+              step="1"
+              value="55"
+            />
+          </div>
+          <div class="range-row">
+            <label for="step_time_std"
+              >Step Time Std
+              <span class="range-value" id="step_time_std_value"
+                >0.05 s</span
+              ></label
+            ><input
+              id="step_time_std"
+              type="range"
+              min="0.01"
+              max="0.20"
+              step="0.01"
+              value="0.05"
+            />
+          </div>
+        </div>
+
+        <div class="action-row mt-4 flex-wrap">
+          <button class="btn btn-success" type="button" id="connectEsp32Btn">
+            <i class="bi bi-wifi me-2"></i>Connect ESP32
+          </button>
+          <button
+            class="btn btn-outline-secondary"
+            type="button"
+            id="useSampleValuesBtn"
+          >
+            <i class="bi bi-sliders me-2"></i>Use sample values
+          </button>
+          <button
+            class="btn btn-outline-danger d-none"
+            type="button"
+            id="disconnectEsp32Btn"
+          >
+            <i class="bi bi-x-circle me-2"></i>Disconnect
+          </button>
+        </div>
+
+        <div class="mode-help mt-3">
+          <div id="liveModeHelp">
+            LIVE mode: connect the ESP32 sensor to populate the six features
+            automatically from the wearable device.
+          </div>
+          <div id="demoModeHelp" class="d-none">
+            DEMO mode: adjust the six gait features manually or use the sample
+            values preset.
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+          <span class="fw-semibold">ESP32 status:</span>
+          <span id="esp32StatusBadge" class="status-badge neutral"
+            >Waiting for ESP32 connection</span
+          >
+        </div>
+
+        <div class="mt-4">
+          <button
+            id="analyzeRiskBtn"
+            class="btn btn-primary btn-lg w-100"
+            type="button"
+          >
+            Analyze Risk
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <div class="card-panel result-panel h-100">
+        <div class="panel-header">
+          <h3>Prediction result</h3>
+          <span id="riskBadge" class="status-badge neutral">Waiting</span>
+        </div>
+
+        <div class="confidence-row">
+          <div>
+            <small>Confidence</small><strong id="confidenceValue">--</strong>
+          </div>
+          <div>
+            <small>Risk band</small><strong id="riskText">Pending</strong>
+          </div>
+        </div>
+
+        <div class="chart-container" style="height: 300px">
+          <canvas id="riskChart"></canvas>
+        </div>
+
+        <div class="mt-4">
+          <h5>Live knee angle</h5>
+          <div class="chart-container" style="height: 220px">
+            <canvas id="liveKneeChart"></canvas>
+          </div>
+        </div>
+
+        <div id="featureSummary" class="feature-summary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+{% endblock %}

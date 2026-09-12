@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="register-shell">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+      <span class="section-badge"><i class="bi bi-person-vcard me-2"></i>COREX registration</span>
+      <h1 class="page-title mt-3 mb-0">Patient intake and screening workflow</h1>
+    </div>
+    <a href="{{ url_for('main_bp.history_page') }}" class="btn btn-outline-primary">
+      <i class="bi bi-clock-history me-2"></i>History
+    </a>
+  </div>
+
+  <div class="medical-card">
+    <div class="card-body p-4 p-lg-5">
+      <div class="progress mb-4" style="height: 10px;">
+        <div id="formProgressBar" class="progress-bar" role="progressbar" style="width: 33%;"></div>
+      </div>
+
+      <div class="step-indicator mb-4">
+        <span class="step-dot active" data-step-indicator="1">1</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step-indicator="2">2</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step-indicator="3">3</span>
+      </div>
+
+      <form id="registerForm" method="post" action="{{ url_for('main_bp.register_patient') }}">
+        <div class="form-step active" data-step="1">
+          <h4 class="mb-3">Step 1: Patient details</h4>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Full name</label>
+              <input type="text" class="form-control" name="name" value="{{ patient.name or '' }}" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-control" name="age" min="0" value="{{ patient.age or '' }}" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Gender</label>
+              <select class="form-select" name="gender">
+                <option value="">Select</option>
+                <option value="Female" {% if (patient.gender or '') == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Male" {% if (patient.gender or '') == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Other" {% if (patient.gender or '') == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">State</label>
+              <select class="form-select" name="state">
+                <option value="">Select</option>
+                {% for state in states %}
+                <option value="{{ state }}" {% if (patient.state or '') == state %}selected{% endif %}>{{ state }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">District</label>
+              <input type="text" class="form-control" name="district" value="{{ patient.district or '' }}" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Village/Town</label>
+              <input type="text" class="form-control" name="village_town" value="{{ patient.village_town or '' }}" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Occupation</label>
+              <input type="text" class="form-control" name="occupation" value="{{ patient.occupation or '' }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-control" name="phone" value="{{ patient.phone or '' }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" name="email" value="{{ patient.email or '' }}" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Screening date</label>
+              <input type="date" class="form-control" name="screening_date" value="{{ patient.screening_date or '' }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Screening mode</label>
+              <select class="form-select" name="screening_mode">
+                <option value="LIVE" {% if (patient.screening_mode or 'LIVE') == 'LIVE' %}selected{% endif %}>LIVE</option>
+                <option value="DEMO" {% if (patient.screening_mode or 'LIVE') == 'DEMO' %}selected{% endif %}>DEMO</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Preferred language</label>
+              <select class="form-select" name="language_preference">
+                <option value="en" {% if (language or 'en') == 'en' %}selected{% endif %}>English</option>
+                <option value="as" {% if (language or 'en') == 'as' %}selected{% endif %}>অসমীয়া</option>
+                <option value="bn" {% if (language or 'en') == 'bn' %}selected{% endif %}>বাংলা</option>
+                <option value="hi" {% if (language or 'en') == 'hi' %}selected{% endif %}>हिन्दी</option>
+                <option value="mni" {% if (language or 'en') == 'mni' %}selected{% endif %}>ꯃꯤꯇꯩꯂꯣꯟ</option>
+                <option value="lus" {% if (language or 'en') == 'lus' %}selected{% endif %}>Mizo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="2">
+          <h4 class="mb-3">Step 2: Pre-screening questionnaire</h4>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Knee pain</label>
+              <select class="form-select" name="knee_pain"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Walking difficulty</label>
+              <select class="form-select" name="walking_difficulty"><option value="">Select</option><option value="None">None</option><option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Stair-climbing difficulty</label>
+              <select class="form-select" name="stair_climbing_difficulty"><option value="">Select</option><option value="None">None</option><option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Stiffness after rest</label>
+              <select class="form-select" name="stiffness_after_rest"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Difficulty standing from a chair</label>
+              <select class="form-select" name="chair_standing_difficulty"><option value="">Select</option><option value="None">None</option><option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Reduced knee movement</label>
+              <select class="form-select" name="reduced_knee_movement"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Symptom duration</label>
+              <select class="form-select" name="symptom_duration">
+                <option value="">Select</option>
+                <option value="None">None</option>
+                <option value="Mild">Mild</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Severe">Severe</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label d-flex justify-content-between align-items-center">
+                <span>Pain level</span>
+                <span id="painLevelValue" class="text-primary fw-semibold">5 / 10</span>
+              </label>
+              <input type="range" class="form-range" min="0" max="10" value="{{ patient.pain_level or 5 }}" name="pain_level" id="painLevelRange" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Mobility status</label>
+              <input type="text" class="form-control" name="mobility" value="{{ patient.mobility or '' }}" placeholder="e.g. Mild limitation" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Medical history</label>
+              <textarea class="form-control" name="medical_history" rows="4" placeholder="Describe any relevant symptoms or history">{{ patient.medical_history or '' }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="3">
+          <h4 class="mb-3">Step 3: Review and consent</h4>
+          <div class="review-card">
+            <div class="review-row"><span>Name</span><strong id="reviewName">{{ patient.name or 'Not provided' }}</strong></div>
+            <div class="review-row"><span>Age / Gender</span><strong id="reviewAgeGender">{{ patient.age or 'N/A' }} / {{ patient.gender or 'N/A' }}</strong></div>
+            <div class="review-row"><span>Location</span><strong id="reviewLocation">{{ patient.state or 'N/A' }} / {{ patient.district or 'N/A' }}</strong></div>
+            <div class="review-row"><span>Screening mode</span><strong id="reviewMode">{{ patient.screening_mode or 'LIVE' }}</strong></div>
+            <div class="review-row"><span>Contact</span><strong id="reviewContact">{{ patient.phone or patient.email or 'N/A' }}</strong></div>
+            <div class="review-row"><span>Pain level</span><strong id="reviewPain">{{ patient.pain_level or 5 }}/10</strong></div>
+          </div>
+
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" id="consentCheck" required />
+            <label class="form-check-label" for="consentCheck">
+              I confirm this intake is for screening only and not a medical diagnosis.
+            </label>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" id="prevStepBtn" class="btn btn-outline-secondary d-none">
+            <i class="bi bi-arrow-left me-2"></i>Back
+          </button>
+          <button type="button" id="nextStepBtn" class="btn btn-primary ms-auto">
+            Next<i class="bi bi-arrow-right ms-2"></i>
+          </button>
+          <button type="submit" id="submitBtn" class="btn btn-primary d-none">
+            <i class="bi bi-save me-2"></i>Save Screening
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+{% endblock %}
