@@ -21,6 +21,39 @@ from flask_app.models_loader import FEATURE_NAMES, build_feature_analysis, load_
 predict_bp = Blueprint("predict_bp", __name__)
 RISK_LABELS = {0: "Low Risk", 1: "Moderate Risk", 2: "High Risk"}
 
+# Gait plausibility bounds for walking-pace screening
+MIN_GAIT_SPEED = 0.5      # m/s  (below = stationary / no movement)
+MAX_GAIT_SPEED = 1.8      # m/s  (above = running / sensor shake)
+MIN_CADENCE = 80.0        # steps/min (below = too few steps)
+MAX_CADENCE = 140.0       # steps/min (above = impossible for walking)
+MIN_STRIDE_TIME = 0.7     # s    (below = too fast for walking)
+MAX_STEP_TIME_STD = 0.10  # s    (above = inconsistent / noisy signal)
+
+
+def _check_movement(feature_values: dict) -> str | None:
+    """Return an error message if the feature set looks invalid for walking-gait screening."""
+    gait_speed = float(feature_values.get("gait_speed", 0.0))
+    cadence = float(feature_values.get("cadence", 0.0))
+    stride_time = float(feature_values.get("stride_time", 0.0))
+    step_time_std = float(feature_values.get("step_time_std", 0.0))
+
+    # Too slow = stationary / no movement
+    if gait_speed < MIN_GAIT_SPEED or cadence < MIN_CADENCE:
+        return ("No valid gait detected (movement too low). "
+                "Please walk continuously for the full 20-second collection.")
+
+    # Too fast = running / sensor shake / simulator
+    if gait_speed > MAX_GAIT_SPEED or cadence > MAX_CADENCE or stride_time < MIN_STRIDE_TIME:
+        return ("Gait pattern is too fast for screening (normal walking pace expected, "
+                "not running or sensor shaking). Please walk at a steady pace.")
+
+    # Inconsistent rhythm = noise
+    if step_time_std > MAX_STEP_TIME_STD:
+        return ("Gait pattern is inconsistent. Please walk at a steady pace "
+                "for the full 20-second collection.")
+
+    return None
+
 
 def _create_report_record(screening: Screening, prediction: dict, patient_data: dict, feature_analysis: list[dict]) -> Report:
     report_prefix = f"OA-{dt.datetime.now().strftime('%Y%m%d')}"
@@ -58,6 +91,12 @@ def predict_api():
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
 
+    # Reject implausible gait input in LIVE mode (stationary OR too fast OR noisy)
+    if mode == "LIVE":
+        movement_error = _check_movement(feature_values)
+        if movement_error:
+            return jsonify({"success": False, "error": movement_error, "code": "INVALID_GAIT"}), 400
+
     patient_id = data.get("patient_id") or session.get("patient_id")
     patient = Patient.query.get(patient_id) if patient_id else None
     if patient is None:
@@ -71,7 +110,6 @@ def predict_api():
                 age=patient_data.get("age"),
                 gender=patient_data.get("gender"),
                 phone=patient_data.get("phone"),
-                email=patient_data.get("email"),
                 address=patient_data.get("address"),
                 medical_history=patient_data.get("medical_history"),
                 state=patient_data.get("state"),

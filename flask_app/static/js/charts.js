@@ -92,40 +92,4 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
   }
-
-  const kneeChartCanvas = document.getElementById("liveKneeChart");
-  if (kneeChartCanvas) {
-    const ctx = kneeChartCanvas.getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: ["1", "2", "3", "4", "5", "6", "7", "8"],
-        datasets: [
-          {
-            label: "Knee angle",
-            data: [42, 48, 55, 52, 58, 60, 56, 62],
-            borderColor: "#0d6efd",
-            backgroundColor: "rgba(13, 110, 253, 0.12)",
-            borderWidth: 3,
-            tension: 0.35,
-            fill: true,
-            pointRadius: 0,
-          },
-        ],
-      },
-      options: {
-        ...baseOptions,
-        scales: {
-          x: { grid: { display: false } },
-          y: {
-            beginAtZero: false,
-            min: 30,
-            max: 80,
-            grid: { color: "rgba(15, 23, 42, 0.08)" },
-          },
-        },
-      },
-    });
-  }
-
 });
