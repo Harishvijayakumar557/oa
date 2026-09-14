@@ -128,33 +128,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const weeklyChartCanvas = document.getElementById("weeklyTrendChart");
-  if (weeklyChartCanvas) {
-    const ctx = weeklyChartCanvas.getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        datasets: [
-          {
-            label: "Screening score",
-            data: [58, 63, 61, 68, 72, 70, 76],
-            borderColor: "#198754",
-            backgroundColor: "rgba(25, 135, 84, 0.10)",
-            borderWidth: 3,
-            tension: 0.35,
-            fill: true,
-            pointRadius: 0,
-          },
-        ],
-      },
-      options: {
-        ...baseOptions,
-        scales: {
-          x: { grid: { display: false } },
-          y: { beginAtZero: false, grid: { color: "rgba(15, 23, 42, 0.08)" } },
-        },
-      },
-    });
-  }
 });

@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const translationElement = document.getElementById("jsTranslations");
+  const t = translationElement ? translationElement.dataset : {};
   const analyzeBtn =
     document.getElementById("analyzeRiskBtn") ||
     document.getElementById("analyzeBtn");
@@ -7,6 +9,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const riskText = document.getElementById("riskText");
   const featureSummary = document.getElementById("featureSummary");
   const patientIdElement = document.getElementById("patientId");
+  const originalAnalyzeButtonHTML = analyzeBtn ? analyzeBtn.innerHTML : "";
+  const collectionDurationSeconds = 20;
+  const minimumReadings = 10;
+  let collectionTimer = null;
+  let collectionActive = false;
+  let collectedFeatures = [];
 
   const sliderIds = [
     "gait_speed",
@@ -93,7 +101,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     featureSummary.innerHTML = features
       .map((feature) => {
-        const status = feature.status === "normal" ? "Normal" : "Abnormal";
+        const featureLabel = t[feature.feature] || feature.label;
+        const status = feature.status === "normal" ? (t.normal || "Normal") : (t.abnormal || "Abnormal");
         const percentage = Math.min(
           100,
           Math.max(
@@ -107,18 +116,18 @@ document.addEventListener("DOMContentLoaded", function () {
           feature.status === "normal"
             ? "feature-status normal"
             : "feature-status abnormal";
-        const note = feature.clinical_note || "No clinical note available.";
+        const note = feature.clinical_note || (t.noNote || "No clinical note available.");
         return `
           <div class="feature-widget">
             <div class="feature-widget-top">
               <div>
-                <div class="feature-label">${feature.label}</div>
+                <div class="feature-label">${featureLabel}</div>
                 <div class="feature-measured">${feature.value} ${feature.unit}</div>
               </div>
               <span class="${statusClass}">${status}</span>
             </div>
-            <div class="feature-range-row"><span>Normal: ${feature.normal_range}</span></div>
-            <div class="progress feature-progress" aria-label="${feature.label} progress">
+            <div class="feature-range-row"><span>${(t.normalRange || "Normal: {range}").replace("{range}", feature.normal_range)}</span></div>
+            <div class="progress feature-progress" aria-label="${(t.progress || "{label} progress").replace("{label}", featureLabel)}">
               <div class="progress-bar ${feature.status === "normal" ? "bg-success" : "bg-warning"}" role="progressbar" style="width: ${progress}%"></div>
             </div>
             <small class="feature-note">${note}</small>
@@ -147,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
     window.riskChartInstance = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: ["Low", "Moderate", "High"],
+            labels: [t.riskLow || "Low", t.riskModerate || "Moderate", t.riskHigh || "High"],
         datasets: [
           {
             data: [
@@ -175,11 +184,33 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  window.analyzeRisk = async function () {
+  function hasValidFeatures(features) {
+    return features && sliderIds.every((key) => Number.isFinite(Number(features[key])));
+  }
+
+  function averageCollectedFeatures(readings) {
+    return sliderIds.reduce((averages, key) => {
+      averages[key] = readings.reduce((sum, reading) => sum + Number(reading[key]), 0) / readings.length;
+      return averages;
+    }, {});
+  }
+
+  function showCollectionError(message) {
+    if (riskBadge) {
+      riskBadge.className = "status-badge high";
+      riskBadge.textContent = t.collectionFailed || "Collection failed";
+    }
+    if (riskText) riskText.textContent = t.collectionFailed || "Collection failed";
+    if (featureSummary) {
+      featureSummary.innerHTML = `<p class="text-danger mb-0">${message}</p>`;
+    }
+  }
+
+  async function predictRisk(features, mode) {
     const payload = {
-      mode: getCurrentMode(),
+      mode,
       patient_id: patientIdElement ? patientIdElement.value : null,
-      features: getCurrentFeatures(),
+      features,
     };
 
     try {
@@ -194,13 +225,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const message =
           result && result.error
             ? result.error
-            : "Unable to process prediction.";
+            : (t.unableProcess || "Unable to process prediction.");
         if (riskBadge) {
           riskBadge.className = "status-badge high";
-          riskBadge.textContent = "Prediction failed";
+          riskBadge.textContent = t.predictionFailed || "Prediction failed";
         }
-        if (riskText) riskText.textContent = "Prediction failed";
-        if (confidenceValue) confidenceValue.textContent = "N/A";
+        if (riskText) riskText.textContent = t.predictionFailed || "Prediction failed";
+        if (confidenceValue) confidenceValue.textContent = t.nA || "N/A";
         if (featureSummary)
           featureSummary.innerHTML = `<p class="text-danger mb-0">${message}</p>`;
         return;
@@ -212,7 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
         moderate: 0.33,
         high: 0.34,
       };
-      const label = prediction.label || "Unknown";
+      const label = prediction.label || t.unknown || "Unknown";
       const riskKey = label.toLowerCase().includes("low")
         ? "low"
         : label.toLowerCase().includes("moderate")
@@ -220,8 +251,15 @@ document.addEventListener("DOMContentLoaded", function () {
           : label.toLowerCase().includes("high")
             ? "high"
             : "neutral";
+      const displayLabel = riskKey === "low"
+        ? (t.riskLow || "Low")
+        : riskKey === "moderate"
+          ? (t.riskModerate || "Moderate")
+          : riskKey === "high"
+            ? (t.riskHigh || "High")
+            : label;
       updateRiskDisplay(
-        label,
+        displayLabel,
         Number(prediction.confidence || 0),
         probabilities,
         riskKey,
@@ -234,14 +272,85 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       if (riskBadge) {
         riskBadge.className = "status-badge high";
-        riskBadge.textContent = "Error";
+        riskBadge.textContent = t.error || "Error";
       }
-      if (riskText) riskText.textContent = "Error";
-      if (confidenceValue) confidenceValue.textContent = "N/A";
+      if (riskText) riskText.textContent = t.error || "Error";
+      if (confidenceValue) confidenceValue.textContent = t.nA || "N/A";
       if (featureSummary)
         featureSummary.innerHTML =
-          '<p class="text-danger mb-0">Unable to connect to the prediction API.</p>';
+          `<p class="text-danger mb-0">${t.unableConnect || "Unable to connect to the prediction API."}</p>`;
     }
+  }
+
+  function updateCollectionButton(secondsRemaining) {
+    if (!analyzeBtn) return;
+    analyzeBtn.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${(t.collecting || "Collecting... {seconds}s").replace("{seconds}", secondsRemaining)}`;
+  }
+
+  function finishLiveCollection() {
+    if (collectionTimer) clearInterval(collectionTimer);
+    collectionTimer = null;
+    collectionActive = false;
+
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.innerHTML = originalAnalyzeButtonHTML;
+    }
+
+    if (collectedFeatures.length < minimumReadings) {
+      showCollectionError(
+        (t.notEnoughData || "Not enough live data collected. Received {count} valid readings; at least {minimum} are required.")
+          .replace("{count}", collectedFeatures.length)
+          .replace("{minimum}", minimumReadings)
+      );
+      return;
+    }
+
+    const averagedFeatures = averageCollectedFeatures(collectedFeatures);
+    collectedFeatures = [];
+    predictRisk(averagedFeatures, "LIVE");
+  }
+
+  function startLiveCollection() {
+    if (!analyzeBtn || collectionActive) return;
+
+    collectionActive = true;
+    collectedFeatures = [];
+    analyzeBtn.disabled = true;
+
+    let secondsRemaining = collectionDurationSeconds;
+    updateCollectionButton(secondsRemaining);
+    collectionTimer = setInterval(() => {
+      secondsRemaining -= 1;
+      if (secondsRemaining <= 0) {
+        finishLiveCollection();
+        return;
+      }
+      updateCollectionButton(secondsRemaining);
+    }, 1000);
+  }
+
+  window.addEventListener("live-data-update", function (event) {
+    if (!collectionActive) return;
+    const data = event.detail || {};
+    if (data.status === "connected" && hasValidFeatures(data.features)) {
+      collectedFeatures.push(
+        sliderIds.reduce((reading, key) => {
+          reading[key] = Number(data.features[key]);
+          return reading;
+        }, {})
+      );
+    }
+  });
+
+  window.analyzeRisk = function () {
+    const mode = getCurrentMode();
+    if (mode === "LIVE") {
+      startLiveCollection();
+      return;
+    }
+
+    predictRisk(getCurrentFeatures(), mode);
   };
 
   if (analyzeBtn) {

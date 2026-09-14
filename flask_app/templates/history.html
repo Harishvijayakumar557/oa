@@ -8,63 +8,53 @@
         ><i class="fa-solid fa-clock-rotate-left me-2"></i>{{
         translations.get('history', 'History') }}</span
       >
-      <h1 class="page-title mt-3">Patient screening history</h1>
+      <h1 class="page-title mt-3">{{ translations.get('patient_history', 'Patient screening history') }}</h1>
     </div>
     <a href="{{ url_for('main_bp.index') }}" class="btn btn-outline-primary"
-      >Back to Dashboard</a
+      >{{ translations.get('back_to_dashboard', 'Back to Dashboard') }}</a
     >
   </div>
 </section>
 
 <div class="card-panel">
-  {% if history %}
   <div class="table-responsive">
-    <table class="modern-table">
+    <table class="table table-hover align-middle">
       <thead>
         <tr>
-          <th>Patient</th>
-          <th>Age</th>
-          <th>Date</th>
-          <th>Mode</th>
-          <th>Risk</th>
-          <th>Report</th>
+          <th>{{ translations.get('patient', 'Patient') }}</th>
+          <th>{{ translations.get('age', 'Age') }}</th>
+          <th>{{ translations.get('date', 'Date') }}</th>
+          <th>{{ translations.get('mode', 'Mode') }}</th>
+          <th>{{ translations.get('risk', 'Risk') }}</th>
+          <th>{{ translations.get('report', 'Report') }}</th>
         </tr>
       </thead>
       <tbody>
-        {% for item in history %}
-        <tr>
-          <td>{{ item.patient.name if item.patient else 'N/A' }}</td>
-          <td>
-            {{ item.patient.age if item.patient and item.patient.age is not none
-            else 'N/A' }}
-          </td>
-          <td>
-            {{ item.timestamp.strftime('%Y-%m-%d %H:%M') if item.timestamp else
-            'N/A' }}
-          </td>
-          <td>{{ item.mode or 'LIVE' }}</td>
-          <td>
-            <span
-              class="status-badge {{ 'low' if item.risk_label == 'Low Risk' else 'moderate' if item.risk_label == 'Moderate Risk' else 'high' if item.risk_label else 'neutral' }}"
-            >
-              {{ item.risk_label or 'N/A' }}
-            </span>
-          </td>
-          <td><a href="/report/{{ item.id }}" class="mini-link">Open</a></td>
-        </tr>
-        {% endfor %}
+        {% if history %}
+          {% for screening in history %}
+          <tr>
+            <td>{{ screening.patient.name if screening.patient else translations.get('unknown', 'Unassigned') }}</td>
+            <td>{{ screening.patient.age if screening.patient and screening.patient.age is not none else translations.get('n_a', 'N/A') }}</td>
+            <td>{{ screening.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ screening.mode or translations.get('n_a', 'N/A') }}</td>
+            <td>
+              {% set risk_label = screening.risk_label or translations.get('pending', 'Pending') %}
+              <span class="badge {% if risk_label == 'Low Risk' %}bg-success{% elif risk_label == 'Moderate Risk' %}bg-warning text-dark{% elif risk_label == 'High Risk' %}bg-danger{% else %}bg-secondary{% endif %}">
+                {{ translations.get('low_risk' if risk_label == 'Low Risk' else 'moderate_risk' if risk_label == 'Moderate Risk' else 'high_risk' if risk_label == 'High Risk' else 'pending', risk_label) }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('report_bp.view_report', screening_id=screening.id) }}">{{ translations.get('open', 'Open') }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center">{{ translations.get('no_screenings_recorded', 'No screenings recorded yet.') }}</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
-  {% else %}
-  <div class="empty-state">
-    <i class="fa-solid fa-inbox"></i>
-    <h4>No patient history recorded yet</h4>
-    <p>
-      Complete the first screening workflow to populate the patient record and
-      risk history.
-    </p>
-  </div>
-  {% endif %}
 </div>
 {% endblock %}

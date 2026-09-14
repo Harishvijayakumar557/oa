@@ -40,9 +40,9 @@
               >{{ translations.get('language', 'Language') }}</label
             >
             <select id="languageSelect" class="form-select form-select-sm">
-              <option value="en">English</option>
-              <option value="ta">தமிழ்</option>
-              <option value="hi">हिन्दी</option>
+              {% for code, label in languages.items() %}
+              <option value="{{ code }}" {% if language == code %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
             </select>
           </div>
         </div>
@@ -57,25 +57,25 @@
               href="{{ url_for('main_bp.index') }}"
               class="nav-link-item {% if request.path == '/' %}active{% endif %}"
             >
-              <i class="bi bi-grid-1x2-fill me-2"></i>Dashboard
+              <i class="bi bi-grid-1x2-fill me-2"></i>{{ translations.get('dashboard', 'Dashboard') }}
             </a>
             <a
               href="{{ url_for('main_bp.register_patient') }}"
               class="nav-link-item {% if request.path.startswith('/register') %}active{% endif %}"
             >
-              <i class="bi bi-plus-circle me-2"></i>New Screening
+              <i class="bi bi-plus-circle me-2"></i>{{ translations.get('new_screening', 'New Screening') }}
             </a>
             <a
               href="{{ url_for('main_bp.history_page') }}"
               class="nav-link-item {% if request.path == '/history' %}active{% endif %}"
             >
-              <i class="bi bi-clock-history me-2"></i>History
+              <i class="bi bi-clock-history me-2"></i>{{ translations.get('history', 'History') }}
             </a>
             <a
               href="{{ url_for('main_bp.settings_page') }}"
               class="nav-link-item {% if request.path == '/settings' %}active{% endif %}"
             >
-              <i class="bi bi-gear me-2"></i>Settings
+              <i class="bi bi-gear me-2"></i>{{ translations.get('settings', 'Settings') }}
             </a>
           </div>
         </aside>
@@ -96,7 +96,7 @@
 
     <footer class="medical-footer">
       <div class="container py-4 text-center">
-        <p class="mb-0">⚠️ For screening only, not medical diagnosis.</p>
+        <p class="mb-0">⚠️ {{ translations.get('disclaimer', 'For screening only, not medical diagnosis') }}.</p>
       </div>
     </footer>
 

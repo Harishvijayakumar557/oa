@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const translationElement = document.getElementById("jsTranslations");
+  const t = translationElement ? translationElement.dataset : {};
   const statusBadge = document.getElementById("esp32StatusBadge");
   const liveKneeChartCanvas = document.getElementById("liveKneeChart");
   const modeButtons = document.querySelectorAll(".mode-btn");
@@ -36,15 +38,15 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateStatusIndicator(status, source, clientIp) {
     if (!statusBadge) return;
     if (status === "connected") {
-      let sourceLabel = "Wi-Fi (UDP)";
-      if (source === "wifi_http") sourceLabel = "Wi-Fi (HTTP)";
-      else if (source === "simulation") sourceLabel = "Simulation";
+      let sourceLabel = t.wifiUdp || "Wi-Fi (UDP)";
+      if (source === "wifi_http") sourceLabel = t.wifiHttp || "Wi-Fi (HTTP)";
+      else if (source === "simulation") sourceLabel = t.testSource || "Test Stream";
 
       statusBadge.className = "badge bg-success text-white px-3 py-2 fs-6";
-      statusBadge.innerHTML = `<i class="bi bi-wifi me-1"></i>Connected: ${sourceLabel}${clientIp ? ` (${clientIp})` : ""}`;
+      statusBadge.innerHTML = `<i class="bi bi-wifi me-1"></i>${(t.connected || "Connected: {source}").replace("{source}", sourceLabel)}${clientIp ? ` (${clientIp})` : ""}`;
     } else {
       statusBadge.className = "badge bg-warning text-dark px-3 py-2 fs-6";
-      statusBadge.innerHTML = `<i class="bi bi-arrow-repeat spin me-1"></i>Waiting for ESP32 Wi-Fi...`;
+      statusBadge.innerHTML = `<i class="bi bi-arrow-repeat spin me-1"></i>${t.waitingWifi || "Waiting for ESP32 Wi-Fi..."}`;
     }
   }
 
@@ -86,7 +88,7 @@ document.addEventListener("DOMContentLoaded", function () {
         labels: Array.from({ length: 30 }, (_, i) => i + 1),
         datasets: [
           {
-            label: "Knee Angle (°)",
+            label: t.kneeAngle || "Knee Angle (°)",
             data: Array.from({ length: 30 }, () => 50),
             borderColor: "#0d6efd",
             backgroundColor: "rgba(13, 110, 253, 0.08)",
@@ -105,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
           y: {
             min: 15,
             max: 95,
-            title: { display: true, text: "Degrees (°)" },
+            title: { display: true, text: t.degrees || "Degrees (°)" },
             grid: { color: "rgba(0,0,0,0.05)" },
           },
           x: {
@@ -169,6 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch("/api/live-data")
       .then((res) => res.json())
       .then((data) => {
+        window.dispatchEvent(new CustomEvent("live-data-update", { detail: data }));
         const isConnected = data.status === "connected";
         updateStatusIndicator(data.status, data.source, data.client_ip);
 
@@ -178,9 +181,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (kneeStatusLabel && data.knee_angle !== undefined) {
           const deg = Number(data.knee_angle);
-          if (deg < 35) kneeStatusLabel.textContent = "Extension / Stance";
-          else if (deg > 60) kneeStatusLabel.textContent = "Peak Flexion / Swing";
-          else kneeStatusLabel.textContent = "Mid-Swing Cycle";
+          if (deg < 35) kneeStatusLabel.textContent = t.extension || "Extension / Stance";
+          else if (deg > 60) kneeStatusLabel.textContent = t.flexion || "Peak Flexion / Swing";
+          else kneeStatusLabel.textContent = t.midSwing || "Mid-Swing Cycle";
         }
 
         if (liveStepCount && data.step_count !== undefined) {
@@ -192,14 +195,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (liveSourceVal) {
-          if (data.source === "wifi_udp") liveSourceVal.textContent = "Wi-Fi (UDP)";
-          else if (data.source === "wifi_http") liveSourceVal.textContent = "Wi-Fi (HTTP)";
-          else if (data.source === "simulation") liveSourceVal.textContent = "Test Stream";
-          else liveSourceVal.textContent = isConnected ? "Active" : "Awaiting";
+          if (data.source === "wifi_udp") liveSourceVal.textContent = t.wifiUdp || "Wi-Fi (UDP)";
+          else if (data.source === "wifi_http") liveSourceVal.textContent = t.wifiHttp || "Wi-Fi (HTTP)";
+          else if (data.source === "simulation") liveSourceVal.textContent = t.testSource || "Test Stream";
+          else liveSourceVal.textContent = isConnected ? (t.active || "Active") : (t.awaiting || "Awaiting");
         }
 
         if (packetCountVal && data.packets_received !== undefined) {
-          packetCountVal.textContent = `${data.packets_received} samples`;
+          packetCountVal.textContent = (t.samples || "{count} samples").replace("{count}", data.packets_received);
         }
 
         // Update continuous knee angle waveform
@@ -237,10 +240,10 @@ document.addEventListener("DOMContentLoaded", function () {
           isSimulating = !!res.simulation;
           if (isSimulating) {
             toggleSimBtn.className = "btn btn-sm btn-danger";
-            toggleSimBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Stop Test Stream';
+            toggleSimBtn.innerHTML = `<i class="bi bi-stop-circle me-1"></i>${t.stopStream || "Stop Test Stream"}`;
           } else {
             toggleSimBtn.className = "btn btn-sm btn-outline-success";
-            toggleSimBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i>Test Wi-Fi Stream';
+            toggleSimBtn.innerHTML = `<i class="bi bi-play-circle me-1"></i>${t.testStream || "Test Wi-Fi Stream"}`;
           }
         });
     });

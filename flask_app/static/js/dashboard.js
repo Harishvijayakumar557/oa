@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const dashboardElement = document.getElementById("dashboardData");
   if (!dashboardElement) return;
 
-  const dashboard = JSON.parse(dashboardElement.dataset.dashboard || "{}");
+  const dashboard = JSON.parse(dashboardElement.textContent || "{}");
 
   const riskChartCtx = document.getElementById("riskDistributionChart");
   if (riskChartCtx) {

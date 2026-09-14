@@ -6,35 +6,35 @@
     >
       <div>
         <span class="section-badge"
-          ><i class="bi bi-sliders me-2"></i>System Settings</span
+          ><i class="bi bi-sliders me-2"></i>{{ translations.get('system_settings', 'System Settings') }}</span
         >
-        <h1 class="page-title mt-3 mb-0">Application preferences</h1>
+        <h1 class="page-title mt-3 mb-0">{{ translations.get('application_preferences', 'Application preferences') }}</h1>
       </div>
     </div>
   </section>
 
-  <div class="card-panel p-4">
+  <form class="card-panel p-4" method="POST" action="{{ url_for('main_bp.settings_page') }}">
     <div class="row g-3">
       <div class="col-md-6">
-        <label class="form-label">Default language</label>
-        <select class="form-select">
-          <option value="en">English</option>
-          <option value="ta">தமிழ்</option>
-          <option value="hi">हिन्दी</option>
+        <label class="form-label" for="defaultLanguage">{{ translations.get('default_language', 'Default language') }}</label>
+        <select id="defaultLanguage" name="language" class="form-select">
+          {% for code, label in languages.items() %}
+          <option value="{{ code }}" {% if language == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="col-md-6">
-        <label class="form-label">Clinical report footer</label>
+        <label class="form-label">{{ translations.get('clinical_report_footer', 'Clinical report footer') }}</label>
         <input
           type="text"
           class="form-control"
-          value="For screening only, not medical diagnosis."
+          value="{{ translations.get('disclaimer', 'For screening only, not medical diagnosis') }}."
         />
       </div>
       <div class="col-12 mt-3">
-        <button type="button" class="btn btn-primary">Save settings</button>
+        <button type="submit" class="btn btn-primary">{{ translations.get('save_settings', 'Save settings') }}</button>
       </div>
     </div>
-  </div>
+  </form>
 </div>
 {% endblock %}

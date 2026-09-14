@@ -5,16 +5,16 @@
   >
     <div>
       <span class="section-badge"
-        ><i class="bi bi-file-earmark-medical me-2"></i>COREX report</span
+        ><i class="bi bi-file-earmark-medical me-2"></i>{{ translations.get('corex_report', 'COREX report') }}</span
       >
-      <h1 class="page-title mt-3 mb-0">AI-Assisted OA Risk Screening Report</h1>
+      <h1 class="page-title mt-3 mb-0">{{ translations.get('ai_report', 'AI-Assisted OA Risk Screening Report') }}</h1>
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a href="{{ url_for('main_bp.index') }}" class="btn btn-outline-primary"
-        ><i class="bi bi-house me-2"></i>Dashboard</a
+        ><i class="bi bi-house me-2"></i>{{ translations.get('dashboard', 'Dashboard') }}</a
       >
-      <a href="/report/{{ report_id }}/pdf" class="btn btn-primary"
-        ><i class="bi bi-download me-2"></i>Download PDF</a
+      <a href="{{ url_for('report_bp.download_report', screening_id=screening.id) }}" class="btn btn-primary"
+        ><i class="bi bi-download me-2"></i>{{ translations.get('download_report', 'Download PDF') }}</a
       >
     </div>
   </div>
@@ -24,97 +24,97 @@
       <div>
         <div class="clinic-name">COREX</div>
         <div class="clinic-details">
-          AI-Assisted OA Risk Screening Platform • Screening only, not diagnosis
+          {{ translations.get('ai_platform', 'AI-Assisted OA Risk Screening Platform') }} • {{ translations.get('screening_not_diagnosis', 'Screening only, not diagnosis') }}
         </div>
       </div>
       <div class="report-meta">
-        <div><strong>Report ID:</strong> {{ report_id or 'N/A' }}</div>
-        <div><strong>Date:</strong> {{ report.timestamp or 'N/A' }}</div>
+        <div><strong>{{ translations.get('report_id', 'Report ID') }}:</strong> {{ report_id or translations.get('n_a', 'N/A') }}</div>
+        <div><strong>{{ translations.get('date', 'Date') }}:</strong> {{ report.timestamp or translations.get('n_a', 'N/A') }}</div>
       </div>
     </header>
 
-    <div class="report-title">COREX • AI-ASSISTED OA RISK SCREENING REPORT</div>
+    <div class="report-title">{{ translations.get('report_title', 'COREX • AI-ASSISTED OA RISK SCREENING REPORT') }}</div>
 
     <section class="report-section">
-      <h3>Patient Information</h3>
+      <h3>{{ translations.get('patient_information', 'Patient Information') }}</h3>
       <div class="row g-3">
         <div class="col-md-3">
-          <label>Name</label>
-          <p>{{ patient.name or 'Patient not available' }}</p>
+          <label>{{ translations.get('name', 'Name') }}</label>
+          <p>{{ patient.name or translations.get('patient_unavailable', 'Patient not available') }}</p>
         </div>
         <div class="col-md-3">
-          <label>Patient ID</label>
-          <p>{{ patient.patient_id or 'N/A' }}</p>
+          <label>{{ translations.get('patient_id', 'Patient ID') }}</label>
+          <p>{{ patient.patient_id or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-2">
-          <label>Age</label>
-          <p>{{ patient.age or 'N/A' }}</p>
+          <label>{{ translations.get('age', 'Age') }}</label>
+          <p>{{ patient.age or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-2">
-          <label>Gender</label>
-          <p>{{ patient.gender or 'N/A' }}</p>
+          <label>{{ translations.get('gender', 'Gender') }}</label>
+          <p>{{ translations.get((patient.gender or '').lower(), patient.gender or translations.get('n_a', 'N/A')) }}</p>
         </div>
         <div class="col-md-2">
-          <label>State</label>
-          <p>{{ patient.state or 'N/A' }}</p>
+          <label>{{ translations.get('state', 'State') }}</label>
+          <p>{{ patient.state or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-3">
-          <label>District</label>
-          <p>{{ patient.district or 'N/A' }}</p>
+          <label>{{ translations.get('district', 'District') }}</label>
+          <p>{{ patient.district or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-3">
-          <label>Village/Town</label>
-          <p>{{ patient.village_town or 'N/A' }}</p>
+          <label>{{ translations.get('village_town', 'Village/Town') }}</label>
+          <p>{{ patient.village_town or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-3">
-          <label>Occupation</label>
-          <p>{{ patient.occupation or 'N/A' }}</p>
+          <label>{{ translations.get('occupation', 'Occupation') }}</label>
+          <p>{{ patient.occupation or translations.get('n_a', 'N/A') }}</p>
         </div>
         <div class="col-md-3">
-          <label>Screening Mode</label>
+          <label>{{ translations.get('screening_mode', 'Screening Mode') }}</label>
           <p>{{ screening.mode|default('LIVE') if screening else 'LIVE' }}</p>
         </div>
       </div>
     </section>
 
     <section class="report-section">
-      <h3>Questionnaire Summary</h3>
+      <h3>{{ translations.get('questionnaire', 'Questionnaire Summary') }}</h3>
       <div class="table-responsive">
         <table class="report-table">
           <thead>
             <tr>
-              <th>Question</th>
-              <th>Answer</th>
+              <th>{{ translations.get('question', 'Question') }}</th>
+              <th>{{ translations.get('answer', 'Answer') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Knee pain</td>
-              <td>{{ patient.knee_pain or 'N/A' }}</td>
+              <td>{{ translations.get('knee_pain', 'Knee pain') }}</td>
+              <td>{{ translations.get((patient.knee_pain or '').lower(), patient.knee_pain or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Walking difficulty</td>
-              <td>{{ patient.walking_difficulty or 'N/A' }}</td>
+              <td>{{ translations.get('walking_difficulty', 'Walking difficulty') }}</td>
+              <td>{{ translations.get((patient.walking_difficulty or '').lower(), patient.walking_difficulty or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Stair-climbing difficulty</td>
-              <td>{{ patient.stair_climbing_difficulty or 'N/A' }}</td>
+              <td>{{ translations.get('stair_difficulty', 'Stair-climbing difficulty') }}</td>
+              <td>{{ translations.get((patient.stair_climbing_difficulty or '').lower(), patient.stair_climbing_difficulty or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Stiffness after rest</td>
-              <td>{{ patient.stiffness_after_rest or 'N/A' }}</td>
+              <td>{{ translations.get('stiffness', 'Stiffness after rest') }}</td>
+              <td>{{ translations.get((patient.stiffness_after_rest or '').lower(), patient.stiffness_after_rest or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Difficulty standing from a chair</td>
-              <td>{{ patient.chair_standing_difficulty or 'N/A' }}</td>
+              <td>{{ translations.get('chair_difficulty', 'Difficulty standing from a chair') }}</td>
+              <td>{{ translations.get((patient.chair_standing_difficulty or '').lower(), patient.chair_standing_difficulty or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Reduced knee movement</td>
-              <td>{{ patient.reduced_knee_movement or 'N/A' }}</td>
+              <td>{{ translations.get('reduced_movement', 'Reduced knee movement') }}</td>
+              <td>{{ translations.get((patient.reduced_knee_movement or '').lower(), patient.reduced_knee_movement or translations.get('n_a', 'N/A')) }}</td>
             </tr>
             <tr>
-              <td>Symptom duration</td>
-              <td>{{ patient.symptom_duration or 'N/A' }}</td>
+              <td>{{ translations.get('symptom_duration', 'Symptom duration') }}</td>
+              <td>{{ translations.get((patient.symptom_duration or '').lower(), patient.symptom_duration or translations.get('n_a', 'N/A')) }}</td>
             </tr>
           </tbody>
         </table>
@@ -122,19 +122,19 @@
     </section>
 
     <section class="report-section">
-      <h3>Two-IMU Sensor Setup</h3>
+      <h3>{{ translations.get('imu_setup', 'Two-IMU Sensor Setup') }}</h3>
       <div class="row g-3">
         <div class="col-md-6">
           <div class="report-subsection">
-            <strong>IMU 1 — Thigh</strong>
-            <p>Placed above knee. Captures thigh movement and orientation.</p>
+            <strong>{{ translations.get('imu_1', 'IMU 1') }} — {{ translations.get('thigh', 'Thigh') }}</strong>
+            <p>{{ translations.get('above_knee', 'Placed above knee. Captures thigh movement and orientation.') }}</p>
           </div>
         </div>
         <div class="col-md-6">
           <div class="report-subsection">
-            <strong>IMU 2 — Lower Leg</strong>
+            <strong>{{ translations.get('imu_2', 'IMU 2') }} — {{ translations.get('lower_leg', 'Lower Leg') }}</strong>
             <p>
-              Placed below knee. Captures lower-leg movement and orientation.
+              {{ translations.get('below_knee', 'Placed below knee. Captures lower-leg movement and orientation.') }}
             </p>
           </div>
         </div>
@@ -142,27 +142,27 @@
     </section>
 
     <section class="report-section">
-      <h3>Six Gait & Movement Features</h3>
+      <h3>{{ translations.get('gait_features', 'Six Gait & Movement Features') }}</h3>
       <div class="table-responsive">
         <table class="report-table">
           <thead>
             <tr>
-              <th>Feature</th>
-              <th>Measured</th>
-              <th>Reference</th>
-              <th>Status</th>
+              <th>{{ translations.get('feature', 'Feature') }}</th>
+              <th>{{ translations.get('measured', 'Measured') }}</th>
+              <th>{{ translations.get('reference', 'Reference') }}</th>
+              <th>{{ translations.get('status', 'Status') }}</th>
             </tr>
           </thead>
           <tbody>
             {% if feature_analysis %} {% for item in feature_analysis %}
             <tr>
-              <td>{{ item.label or item.feature }}</td>
+              <td>{{ translations.get(item.feature, item.label or item.feature) }}</td>
               <td>{{ item.value }} {{ item.unit }}</td>
               <td>{{ item.normal_range }}</td>
               <td>
                 <span
                   class="risk-pill risk-{{ 'low' if item.status == 'abnormal' else 'normal' }}"
-                  >{{ 'Abnormal' if item.status == 'abnormal' else 'Normal'
+                  >{{ translations.get('abnormal' if item.status == 'abnormal' else 'normal', 'Abnormal' if item.status == 'abnormal' else 'Normal')
                   }}</span
                 >
               </td>
@@ -170,7 +170,7 @@
             {% endfor %} {% else %}
             <tr>
               <td colspan="4" class="text-center text-muted py-3">
-                No feature data available for this screening yet.
+                {{ translations.get('no_feature_data', 'No feature data available for this screening yet.') }}
               </td>
             </tr>
             {% endif %}
@@ -181,35 +181,32 @@
 
     <section class="report-section two-col">
       <div class="report-subsection">
-        <h4>AI-Assisted Risk Result</h4>
+        <h4>{{ translations.get('ai_risk', 'AI-Assisted Risk Result') }}</h4>
         <div
           class="risk-box risk-{{ prediction.label.lower().replace(' ', '-') if prediction and prediction.label else 'moderate-risk' }}"
         >
           <div class="risk-box-title">
-            {{ prediction.label or 'Awaiting assessment' }}
+            {{ translations.get('low_risk' if prediction.label == 'Low Risk' else 'moderate_risk' if prediction.label == 'Moderate Risk' else 'high_risk' if prediction.label == 'High Risk' else 'awaiting_assessment', prediction.label or 'Awaiting assessment') }}
           </div>
           <div class="risk-box-value">
             {{ ((prediction.confidence * 100) if prediction and
             prediction.confidence else 0) | round(1) }}%
           </div>
-          <small>Model confidence</small>
+          <small>{{ translations.get('model_confidence', 'Model confidence') }}</small>
         </div>
       </div>
       <div class="report-subsection">
-        <h4>Screening Interpretation</h4>
+        <h4>{{ translations.get('interpretation', 'Screening Interpretation') }}</h4>
         <p>
-          Movement patterns indicate elevated OA risk markers compared with the
-          configured reference ranges.
+          {{ translations.get('interpretation_text', 'Movement patterns indicate elevated OA risk markers compared with the configured reference ranges.') }}
         </p>
       </div>
     </section>
 
     <section class="report-section">
-      <h3>Recommended Next Steps</h3>
+      <h3>{{ translations.get('next_steps', 'Recommended Next Steps') }}</h3>
       <p>
-        COREX provides AI-assisted screening and risk indication only. It does
-        not diagnose osteoarthritis and does not replace evaluation by a
-        qualified healthcare professional.
+        {{ translations.get('next_steps_text', 'COREX provides AI-assisted screening and risk indication only. It does not diagnose osteoarthritis and does not replace evaluation by a qualified healthcare professional.') }}
       </p>
     </section>
   </article>

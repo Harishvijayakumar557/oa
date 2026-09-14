@@ -12,8 +12,9 @@ class Patient(db.Model):
     name = db.Column(db.String(150), nullable=False)
     age = db.Column(db.Integer, nullable=True)
     gender = db.Column(db.String(50), nullable=True)
+    height_cm = db.Column(db.Float, nullable=True)
+    weight_kg = db.Column(db.Float, nullable=True)
     phone = db.Column(db.String(50), nullable=True)
-    email = db.Column(db.String(150), nullable=True)
     address = db.Column(db.Text, nullable=True)
     state = db.Column(db.String(100), nullable=True)
     district = db.Column(db.String(100), nullable=True)
@@ -46,8 +47,9 @@ class Patient(db.Model):
             "name": self.name,
             "age": self.age,
             "gender": self.gender,
+            "height_cm": self.height_cm,
+            "weight_kg": self.weight_kg,
             "phone": self.phone,
-            "email": self.email,
             "address": self.address,
             "state": self.state,
             "district": self.district,

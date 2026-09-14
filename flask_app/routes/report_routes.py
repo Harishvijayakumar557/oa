@@ -94,12 +94,10 @@ def download_report(screening_id: int):
         pdf_path.write_bytes(pdf_bytes)
         if report is None:
             report = Report(screening_id=screening.id, report_id=report_id, pdf_path=str(pdf_path))
-            from models.database import db
             db.session.add(report)
             db.session.commit()
         else:
             report.pdf_path = str(pdf_path)
-            from models.database import db
             db.session.commit()
 
     response = make_response(pdf_path.read_bytes())

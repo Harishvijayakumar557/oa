@@ -17,6 +17,7 @@ from flask_app.models.screening import Screening
 from flask_app.translations import LANGUAGE_OPTIONS, TRANSLATIONS
 
 main_bp = Blueprint("main_bp", __name__)
+SUPPORTED_LANGUAGE_CODES = set(LANGUAGE_OPTIONS)
 COREX_STATES = [
     "Assam",
     "Arunachal Pradesh",
@@ -27,6 +28,13 @@ COREX_STATES = [
     "Sikkim",
     "Tripura",
 ]
+
+
+@main_bp.before_request
+def apply_requested_language():
+    requested_language = request.args.get("lang")
+    if requested_language in SUPPORTED_LANGUAGE_CODES:
+        session["language"] = requested_language
 
 
 def _lang_context(lang: str | None = None):
@@ -108,8 +116,9 @@ def register_patient():
         "name": request.form.get("name", "").strip(),
         "age": request.form.get("age", "") or None,
         "gender": request.form.get("gender", "") or None,
+        "height_cm": request.form.get("height_cm", "") or None,
+        "weight_kg": request.form.get("weight_kg", "") or None,
         "phone": request.form.get("phone", "").strip() or None,
-        "email": request.form.get("email", "").strip() or None,
         "address": request.form.get("address", "").strip() or None,
         "state": request.form.get("state", "").strip() or None,
         "district": request.form.get("district", "").strip() or None,
@@ -137,8 +146,9 @@ def register_patient():
         name=payload["name"],
         age=int(payload["age"]) if payload["age"] not in (None, "") else None,
         gender=payload["gender"],
+        height_cm=float(payload["height_cm"]) if payload["height_cm"] not in (None, "") else None,
+        weight_kg=float(payload["weight_kg"]) if payload["weight_kg"] not in (None, "") else None,
         phone=payload["phone"],
-        email=payload["email"],
         address=payload["address"],
         state=payload["state"],
         district=payload["district"],
@@ -165,7 +175,7 @@ def register_patient():
     session["screening_mode"] = payload["screening_mode"]
     session["language"] = request.form.get("language_preference", session.get("language", "en"))
 
-    if request.is_json or request.accept_mimetypes.accept_json:
+    if request.is_json:
         return jsonify({"success": True, "patient_id": patient.id, "redirect": url_for("main_bp.analysis_page")})
 
     flash("Patient saved successfully.", "success")
@@ -198,9 +208,18 @@ def history_page():
     return render_template("history.html", history=screenings, **_lang_context())
 
 
-@main_bp.route("/settings")
+@main_bp.route("/settings", methods=["GET", "POST"])
 def settings_page():
     """Render the settings/preferences page."""
+    if request.method == "POST":
+        selected_language = request.form.get("language")
+        if selected_language in SUPPORTED_LANGUAGE_CODES:
+            session["language"] = selected_language
+            flash("Language settings saved.", "success")
+        else:
+            flash("Unsupported language selected.", "error")
+        return redirect(url_for("main_bp.settings_page"))
+
     return render_template("settings.html", **_lang_context())
 
 
